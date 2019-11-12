@@ -9,21 +9,22 @@ defmodule EtsTest do
 
   test "storing two values for a key works" do
     :ets.new(:table_name, [:named_table, :duplicate_bag, :protected])
-    :ets.insert(:table_name, {"key", "value"})
-    :ets.insert(:table_name, {"key", "value2"})
+    :ets.insert(:table_name, {"key1", "key2", "value"})
+    :ets.insert(:table_name, {"key1", "key2", "value2"})
 
-    expected = [{"key", "value"}, {"key", "value2"}]
-    actual = :ets.lookup(:table_name, "key")
+    expected = [{"key1", "key2", "value"}, {"key1", "key2", "value2"}]
+    # actual = :ets.lookup(:table_name, {"key1", "key2"})
+    actual = :ets.match_object(:table_name, {:_,:_,:_})
     assert expected == actual
   end
 
   test "can get list of values for a key" do
     :ets.new(:table_name, [:named_table, :duplicate_bag, :protected])
-    :ets.insert(:table_name, {"key", "value"})
-    :ets.insert(:table_name, {"key", "value2"})
+    :ets.insert(:table_name, {"key1", "key2", "value"})
+    :ets.insert(:table_name, {"key1", "key2", "value2"})
 
-    filter = {"key",:"$1"}
-    # filter = [{{:"$1", :"$2"}, [{:==, :"$1", "key"}], [:"$2"]}]
+    filter = {"key1", "key2",:"$1"}
+    # filter = [{{:"$1", :"$2"}, [{:==, :"$1", "key1", "key2"}], [:"$2"]}]
     actual = :ets.match(:table_name, filter)
     expected = [["value"], ["value2"]]
 

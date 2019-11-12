@@ -14,11 +14,6 @@ defmodule DistributedTriads.Storage do
     GenServer.start_link(__MODULE__, @table, name: __MODULE__)
   end
 
-  @doc """
-  Looks up the bucket pid for `name` stored in `server`.
-
-  Returns `{:ok, pid}` if the bucket exists, `:error` otherwise.
-  """
   def lookup(server, name) do
     # 2. Lookup is now done directly in ETS, without accessing the server
     case :ets.lookup(server, name) do
@@ -27,8 +22,8 @@ defmodule DistributedTriads.Storage do
     end
   end
 
-  def store(key, value) do
-    GenServer.cast(__MODULE__, {:post, key, value})
+  def store(firstWord, secondWord, thirdWord) do
+    GenServer.cast(__MODULE__, {:post, firstWord, secondWord, thirdWord})
   end
 
 
@@ -38,49 +33,28 @@ defmodule DistributedTriads.Storage do
     {:ok, {name, table}}
   end
 
-  def get_values(key) do
-    values = :ets.lookup(@table, key)
-    Enum.map(values, fn {_, value} -> value end)
+  def get_random_value(firstWord, secondWord) do
+    get_values(firstWord, secondWord)
+    |> Enum.at(0)
+    # |> Enum.random
   end
 
-  def wait_for(key) do
-    case :ets.lookup(@table, key) do
+  def get_values(firstWord, secondWord) do
+    values = :ets.match_object(@table, {firstWord, secondWord, :"$1"})
+    Enum.map(values, fn {_, _, value} -> value end)
+  end
+
+  def wait_for(key1, key2) do
+    case :ets.match_object(@table, {key1, key2, :"$1"}) do
       [] ->
         :timer.sleep(1)
-        wait_for(key)
+        wait_for(key1, key2)
       _ -> :ok
     end
   end
 
-  def handle_cast({:post, key, value}, _from) do
-    result = :ets.insert(@table, {key, value})
+  def handle_cast({:post, key1, key2, value}, _from) do
+    result = :ets.insert(@table, {key1, key2, value})
     {:noreply, result}
-  end
-
-  # 4. The previous handle_call callback for lookup was removed
-
-  # def handle_cast({:create, name}, {names, refs}) do
-  #   # 5. Read and write to the ETS table instead of the map
-  #   case lookup(names, name) do
-  #     {:ok, _pid} ->
-  #       {:noreply, {names, refs}}
-  #     :error ->
-  #       {:ok, pid} = DynamicSupervisor.start_child(KV.BucketSupervisor, KV.Bucket)
-  #       ref = Process.monitor(pid)
-  #       refs = Map.put(refs, ref, name)
-  #       :ets.insert(names, {name, pid})
-  #       {:noreply, {names, refs}}
-  #   end
-  # end
-
-  def handle_info({:DOWN, ref, :process, _pid, _reason}, {names, refs}) do
-    # 6. Delete from the ETS table instead of the map
-    {name, refs} = Map.pop(refs, ref)
-    :ets.delete(names, name)
-    {:noreply, {names, refs}}
-  end
-
-  def handle_info(_msg, state) do
-    {:noreply, state}
   end
 end
