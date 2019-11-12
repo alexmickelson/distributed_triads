@@ -24,14 +24,5 @@ defmodule LoadFileTest do
       assert "a" in Storage.get_values("this", "is")
       assert "other" in Storage.get_values("this", "is")
     end
-
-    test "waits for last word without being told" do
-      Storage.start_link()
-      input = ["this", "is", "a", "this", "is", "other", "thing"]
-      LoadFile.process_words(input)
-
-      assert "thing" in Storage.get_values("is", "other")
-
-    end
   end
 end

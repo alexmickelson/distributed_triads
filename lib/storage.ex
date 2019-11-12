@@ -35,8 +35,7 @@ defmodule DistributedTriads.Storage do
 
   def get_random_value(firstWord, secondWord) do
     get_values(firstWord, secondWord)
-    |> Enum.at(0)
-    # |> Enum.random
+    |> Enum.random
   end
 
   def get_values(firstWord, secondWord) do

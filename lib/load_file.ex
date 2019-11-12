@@ -19,14 +19,12 @@ defmodule DistributedTriads.LoadFile do
     {:error, message}
   end
 
-  def process_words(list, _first \\ "");
-  def process_words([first, second, third | rest], _) do
+  def process_words([first, second, third | rest]) do
     Storage.store(first, second, third)
-    process_words([second, third | rest], first)
+    process_words([second, third | rest])
   end
 
-  def process_words([second_to_last_word, _last_word], third_to_last) do
-    Storage.wait_for(third_to_last, second_to_last_word)
+  def process_words([_second_to_last_word, _last_word]) do
     :ok
   end
 end
